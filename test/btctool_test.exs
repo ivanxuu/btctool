@@ -1,8 +1,5 @@
 defmodule BtcToolTest do
   use ExUnit.Case
-  doctest BtcTool
+  doctest BtcTool, import: true
 
-  test "greets the world" do
-    assert BtcTool.hello() == :world
-  end
 end
