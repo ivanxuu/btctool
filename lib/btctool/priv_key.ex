@@ -43,6 +43,8 @@ defmodule BtcTool.PrivKey do
         network: :testnet
       }
   """
+  @spec to_wif(<<_::256>> | <<_::264>>, :testnet | :mainnet, boolean) ::
+    BtcTool.wif_type
   def to_wif(binprivkey, network, compress)
   def to_wif(binprivkey, :testnet, false) do
     %{encoded: encoded} = Area58check.encode(binprivkey, :tesnet_wif)

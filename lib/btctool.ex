@@ -7,6 +7,21 @@ defmodule BtcTool do
 
   alias BtcTool.PrivKey
 
+  @typedoc """
+  Wallet Import Format including the base58check containing the private
+  key.
+
+  WIF will be a base58check string of 51 characters (408 bits) if user
+  want to use uncompressed public keys in the bitcoin addresses or 52
+  characters (416 bits) if want to use compressed public keys.
+
+  Metadata like `network` or `compressed` can also be deducted from the
+  WIP string, but make them visible anyway here:
+   - `network`. Which is instended to be used on.
+   - `compressed`. Which state if a compressed public key will be used
+  """
+  @type wif_type :: %{wif: <<_::408>> | <<_::416>>, network: :testnet | :mainnet, compressed: boolean }
+
   @doc """
   Create Wallet Import Format (WIF) private key from raw private key.
   A raw private key can be presented by a binary of 32 bytes or in
@@ -57,6 +72,9 @@ defmodule BtcTool do
       {:error, :incorrect_privkey}
   """
   @default_options [network: :mainnet, compressed: true]
+  @spec privkey_to_wif( <<_::512>> | <<_::256>>, [{atom, any}] ) ::
+    {:ok, wif_type}
+    | {:error, atom }
   def privkey_to_wif(hexprivkey, options \\ [])
   def privkey_to_wif(hexprivkey, options) when is_binary(hexprivkey) and bit_size(hexprivkey) === 512 do
     options = Keyword.merge( [case: :mixed], options)
