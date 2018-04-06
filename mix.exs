@@ -1,13 +1,19 @@
 defmodule BtcTool.Mixfile do
   use Mix.Project
 
+  @github_url "https://github.com/ihinojal/btctool"
+
   def project do
     [
       app: :btctool,
       version: "0.1.0",
       elixir: "~> 1.5",
       start_permanent: Mix.env == :prod,
-      deps: deps()
+      deps: deps(),
+      description: description(),
+      package: package(),
+      source_url: @github_url,
+      docs: docs()
     ]
   end
 
@@ -27,4 +33,28 @@ defmodule BtcTool.Mixfile do
       # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"},
     ]
   end
+
+  defp description do
+    "Bitcoin utils related to Elliptic curve cryptography (ECC) algorithms "<>
+    "used in bitcoin to create addresses or public keys from private keys, "<>
+    "brainwallets, WIFs, etc."
+  end
+
+  defp package do
+    [
+      maintainers: ["Ivan H."],
+      licenses: ["MIT"],
+      links: %{"Github" => @github_url}
+    ]
+  end
+
+  defp docs do
+    [
+      main: "BtcTool",
+      # source_ref: "v#{@version}",
+      # logo: "path/to/logo.png",
+      extras: ["README.md"]
+    ]
+  end
+
 end
