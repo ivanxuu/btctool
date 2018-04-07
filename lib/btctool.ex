@@ -7,6 +7,11 @@ defmodule BtcTool do
 
   alias BtcTool.PrivKey
 
+  # Min-max value for secp256k1 ECC. More info at:
+  # https://bitcoin.stackexchange.com/questions/1389#answer-1715
+  @ecc_min "0000000000000000000000000000000000000000000000000000000000000000" |> Base.decode16!()
+  @ecc_max "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364140" |> Base.decode16!()
+
   @typedoc """
   Wallet Import Format including the base58check containing the private
   key.
@@ -66,21 +71,33 @@ defmodule BtcTool do
       }}
 
   When binary private key has an unexpected length (not 64 bytes for hex
-  format or 32 bytes for binary format):
+  format or 32 bytes for binary format) returns error:
 
       iex> privkey_to_wif(<<1, 35, 69>>)
-      {:error, :incorrect_privkey}
+      {:error, :incorrect_privkey_length}
+
+  When private key is out of recommended range will return error:
+
+      iex> maxprivkey = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364140" |> Base.decode16!()
+      iex> privkey_to_wif(maxprivkey)
+      {:error, :ecc_out_range}
   """
   @default_options [network: :mainnet, compressed: true]
   @spec privkey_to_wif( <<_::512>> | <<_::256>>, [{atom, any}] ) ::
     {:ok, wif_type}
     | {:error, atom }
-  def privkey_to_wif(hexprivkey, options \\ [])
+  def privkey_to_wif(privkey, options \\ [])
   def privkey_to_wif(hexprivkey, options) when is_binary(hexprivkey) and bit_size(hexprivkey) === 512 do
     options = Keyword.merge( [case: :mixed], options)
     hexprivkey
     |>Base.decode16!(case: options[:case])
     |>privkey_to_wif(options)
+  end
+  # Private key must be inside a recommended range. Otherwise return
+  # error. More info at:
+  # https://bitcoin.stackexchange.com/questions/1389#answer-1715
+  def privkey_to_wif(hexprivkey, _options) when hexprivkey <= @ecc_min or hexprivkey >= @ecc_max do
+    {:error, :ecc_out_range}
   end
   def privkey_to_wif(binprivkey, options) when is_binary(binprivkey) and bit_size(binprivkey) === 256 do
     options = Keyword.merge(@default_options, options)
@@ -88,7 +105,7 @@ defmodule BtcTool do
   end
   # If privkey is not binary or have the expected length return error
   def privkey_to_wif(_privkey, _options ) do
-    {:error, :incorrect_privkey}
+    {:error, :incorrect_privkey_length}
   end
 
 end
