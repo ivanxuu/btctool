@@ -6,7 +6,9 @@ defmodule BtcTool.Mixfile do
   def project do
     [
       app: :btctool,
-      version: "0.1.0",
+      version: "0.1.0", # Major: Incompatible API changes
+                        # Minor: Backward-compatible added functionality
+                        # Patch: Backward-compatible bug fixes
       elixir: "~> 1.5",
       start_permanent: Mix.env == :prod,
       deps: deps(),
@@ -27,7 +29,7 @@ defmodule BtcTool.Mixfile do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:area58check, "~> 0.1.0"},
+      {:area58check, "~> 0.1"},
       {:dialyxir, "~> 0.5", only: [:dev], runtime: false},
       {:ex_doc, "~> 0.16", only: :dev, runtime: false},
       # {:dep_from_hexpm, "~> 0.3.0"},

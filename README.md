@@ -26,7 +26,7 @@ dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:btctool, "~> 0.1.0"}
+    {:btctool, "~> 0.1"}
   ]
 end
 ```
