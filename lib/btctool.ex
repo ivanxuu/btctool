@@ -12,19 +12,32 @@ defmodule BtcTool do
   @ecc_min "0000000000000000000000000000000000000000000000000000000000000000" |> Base.decode16!()
   @ecc_max "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364140" |> Base.decode16!()
 
+  @typedoc """
+  Wallet Import Format string to be imported in base58check.
+
+  Examples:
+    - Uncompressed private key to be imported (51 characters in base58,
+    starts with `5`)
+    E.g.: `5HpneLQNKrcznVCQpzodYwAmZ4AoHeyjuRf9iAHAa498rP5kuWb`
+    - Compressed private key to be imported (52 characters in base58,
+    starts with `K` or `L`)
+    E.g.: `KwFvTne98E1t3mTNAr8pKx67eUzFJWdSNPqPSfxMEtrueW7PcQzL`
+  """
   @type wif_type :: <<_::408>> | <<_::416>>
   @typedoc """
   Wallet Import Format including the base58check containing the private
   key.
 
   WIF will be a base58check string of 51 characters (408 bits) if user
-  want to use uncompressed public keys in the bitcoin addresses or 52
-  characters (416 bits) if want to use compressed public keys.
+  want to use uncompressed public keys in the bitcoin addresses, or 52
+  characters (416 bits) if wants to use compressed public keys.
 
   Metadata like `network` or `compressed` can also be deducted from the
   WIP string, but make them visible anyway here:
-   - `network`. Which is instended to be used on.
-   - `compressed`. Which state if a compressed public key will be used
+   - `network`. Which network (`:mainnet`, or `:testnet`) is intended to
+   be used on.
+   - `compressed`. States if a compressed public key will be used when
+   generating addresses.
   """
   @type wif_result :: %{wif: wif_type, network: :testnet | :mainnet, compressed: boolean }
   @typedoc """
@@ -33,8 +46,10 @@ defmodule BtcTool do
 
   Also returns extracted available metadata like `network` or
   `compressed` deducted from the WIP string:
-   - `network`. Which is instended to be used on.
-   - `compressed`. Which state if a compressed public key will be used
+   - `network`. Which network (`:mainnet`, or `:testnet`)is intended to
+   be used on.
+   - `compressed`. States if a compressed public key will be used when
+   generating addresses.
   """
   @type privkey_result :: %{privkey_bin: <<_::256>>, privkey_hex: <<_::512>>, network: :testnet | :mainnet, compressed: boolean }
 
