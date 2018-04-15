@@ -4,19 +4,13 @@ Bitcoin utils related to Elliptic curve cryptography (ECC) algorithms
 used in bitcoin to create addresses or public keys from private keys,
 brainwallets, WIFs, etc.
 
-## Usage examples
+## Functions
 
-    iex> hexprivkey = "0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF"
-    iex> binprivkey = hexprivkey |> Base.decode16!()
-    <<1, 35, 69, 103, 137, 171, 205, 239, 1, 35, 69, 103, 137, 171, 205, 239, 1, 35, 69, 103, 137, 171, 205, 239, 1, 35, 69, 103, 137, 171, 205, 239>>
+  [BtcTool.privkey_to_wif(privkey, options)](https://hexdocs.pm/btctool/BtcTool.html#privkey_to_wif/2)
+  Create WIF private key from raw private key.
 
-Create WIF private key from raw private key. Use Base58. Compressed by default.
-
-    iex> privkeywifcomp = BtcTool.privkey_to_wif(hexprivkey)
-    "KwFvTne98E1t3mTNAr8pKx67eUzFJWdSNPqPSfxMEtrueW7PcQzL"
-    iex> privkeywifuncomp = BtcTool.privkey_to_wif(binprivkey, compressed: false)
-    "5HpneLQNKrcznVCQpzodYwAmZ4AoHeyjuRf9iAHAa498rP5kuWb"
-
+  [BtcTool.wif_to_privkey(wif)](https://hexdocs.pm/btctool/BtcTool.html#wif_to_privkey/1)
+  Returns the raw private key from a Wallet Import Format (WIF) string.
 
 ## Installation
 

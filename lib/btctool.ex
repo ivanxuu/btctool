@@ -12,6 +12,7 @@ defmodule BtcTool do
   @ecc_min "0000000000000000000000000000000000000000000000000000000000000000" |> Base.decode16!()
   @ecc_max "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364140" |> Base.decode16!()
 
+  @type wif_type :: <<_::408>> | <<_::416>>
   @typedoc """
   Wallet Import Format including the base58check containing the private
   key.
@@ -25,7 +26,17 @@ defmodule BtcTool do
    - `network`. Which is instended to be used on.
    - `compressed`. Which state if a compressed public key will be used
   """
-  @type wif_type :: %{wif: <<_::408>> | <<_::416>>, network: :testnet | :mainnet, compressed: boolean }
+  @type wif_result :: %{wif: wif_type, network: :testnet | :mainnet, compressed: boolean }
+  @typedoc """
+  Returns the raw private key in binary format (512bits) and hexadecimal
+  format (characters a-z0-9)
+
+  Also returns extracted available metadata like `network` or
+  `compressed` deducted from the WIP string:
+   - `network`. Which is instended to be used on.
+   - `compressed`. Which state if a compressed public key will be used
+  """
+  @type privkey_result :: %{privkey_bin: <<_::256>>, privkey_hex: <<_::512>>, network: :testnet | :mainnet, compressed: boolean }
 
   @doc """
   Create Wallet Import Format (WIF) private key from raw private key.
@@ -84,7 +95,7 @@ defmodule BtcTool do
   """
   @default_options [network: :mainnet, compressed: true]
   @spec privkey_to_wif( <<_::512>> | <<_::256>>, [{atom, any}] ) ::
-    {:ok, wif_type}
+    {:ok, wif_result}
     | {:error, atom }
   def privkey_to_wif(privkey, options \\ [])
   def privkey_to_wif(hexprivkey, options) when is_binary(hexprivkey) and bit_size(hexprivkey) === 512 do
@@ -107,5 +118,45 @@ defmodule BtcTool do
   def privkey_to_wif(_privkey, _options ) do
     {:error, :incorrect_privkey_length}
   end
+
+  @doc """
+  Returns the raw private key from a Wallet Import Format (WIF) string.
+  Including metadata from WIF telling:
+    - `compressed`: If when generating the public key, should use
+    compressed format or uncompressed.
+    - `network`: Where the private key should be used. In mainnet, or
+    testnet.
+
+  ## Examples
+
+  Converts from wif to raw private key.
+
+      iex> wif_to_privkey("KwFvTne98E1t3mTNAr8pKx67eUzFJWdSNPqPSfxMEtrueW7PcQzL")
+      {:ok, %{
+        privkey_bin: <<1, 35, 69, 103, 137, 171, 205, 239, 1, 35, 69, 103, 137, 171, 205, 239, 1, 35, 69, 103, 137, 171, 205, 239, 1, 35, 69, 103, 137, 171, 205, 239>>,
+        privkey_hex: "0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF",
+        compressed: true,
+        network: :mainnet
+      }}
+
+  ### Expected errors:
+
+    Error if is base58check is another type other from WIF:
+
+      iex> wif_to_privkey("1CLrrRUwXswyF2EVAtuXyqdk4qb8DSUHCX")
+      {:error, :not_wif_version_prefix}
+
+    Error if checksum is not valid:
+
+      iex> wif_to_privkey("KyFvTne98E1t3mTNAr8pKx67eUzFJWdSNPqPSfxMEtrueW7PcQzL")
+      {:error, :checksum_incorrect}
+
+    Error if using an unvalid base58 character:
+
+      iex> wif_to_privkey("10Ol0Ol0Ol0Ol0Ol0Ol0OOlIIIIIII0OlI")
+      {:error, :incorrect_base58}
+  """
+  @spec wif_to_privkey(wif_type) :: {:ok, privkey_result} | {:error, atom}
+  def wif_to_privkey(wif), do: PrivKey.from_wif(wif)
 
 end

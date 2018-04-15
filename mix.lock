@@ -1,4 +1,4 @@
-%{"area58check": {:hex, :area58check, "0.1.0", "ff67a1394701bf4e3d8351cdca89b442bd9a05404ea14a24413375afcb0167a1", [:mix], [], "hexpm"},
+%{"area58check": {:hex, :area58check, "0.1.1", "7d8c6b2c25ed8fcb037ddc5e358a7d7be6ad47e81ac8dc2ae1fb1c04a33cb336", [:mix], [], "hexpm"},
   "dialyxir": {:hex, :dialyxir, "0.5.1", "b331b091720fd93e878137add264bac4f644e1ddae07a70bf7062c7862c4b952", [:mix], [], "hexpm"},
   "earmark": {:hex, :earmark, "1.2.5", "4d21980d5d2862a2e13ec3c49ad9ad783ffc7ca5769cf6ff891a4553fbaae761", [:mix], [], "hexpm"},
   "ex_doc": {:hex, :ex_doc, "0.18.3", "f4b0e4a2ec6f333dccf761838a4b253d75e11f714b85ae271c9ae361367897b7", [:mix], [{:earmark, "~> 1.1", [hex: :earmark, repo: "hexpm", optional: false]}], "hexpm"}}

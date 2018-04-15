@@ -44,7 +44,7 @@ defmodule BtcTool.PrivKey do
       }
   """
   @spec to_wif(<<_::256>> | <<_::264>>, :testnet | :mainnet, boolean) ::
-    BtcTool.wif_type
+    BtcTool.wif_result
   def to_wif(binprivkey, network, compress)
   def to_wif(binprivkey, :testnet, false) do
     %{encoded: encoded} = Area58check.encode(binprivkey, :testnet_wif)
@@ -62,4 +62,55 @@ defmodule BtcTool.PrivKey do
     |>to_wif(network, false)
     |>Map.merge(%{compressed: true}) # Override compression to true
   end
+
+  @doc """
+  Convert from Wallet Import Format private key to its raw version
+  (binary and hexadecimal format).
+  """
+  @spec from_wif(BtcTool.wif_type) :: {:ok, BtcTool.privkey_result} | {:error, atom}
+  def from_wif(wif) do
+    Area58check.decode(wif)
+    |>process_base58check_result()
+  end
+  defp process_base58check_result({:ok, %{decoded: decoded, version: version}}) when version in [:wif, :testnet_wif] do
+    network = wif_version_to_network(version) #=> :testnet or :mainnet
+    process_binary_privkey(decoded)
+    |>case do
+        {:ok, result} -> {:ok, Map.put(result, :network, network)}
+        {:error, error} -> {:error, error}
+      end
+  end
+  # Version is another from :wif, or :wif_testnet
+  defp process_base58check_result({:ok, %{decoded: _decoded, version: _version}}) do
+    {:error, :not_wif_version_prefix}
+  end
+  defp process_base58check_result({:error, area58check_error}) do
+    {:error, area58check_error}
+  end
+  defp wif_version_to_network(:wif), do: :mainnet
+  defp wif_version_to_network(:testnet_wif), do: :testnet
+  # binary privkey has the expected length of 256 bits. So that signals
+  # to use public uncompressed keys
+  defp process_binary_privkey(binprivkey) when bit_size(binprivkey) == 256 do
+    {:ok, %{
+      privkey_bin: binprivkey,
+      privkey_hex: Base.encode16(binprivkey),
+      compressed: false}
+    }
+  end
+  # binary privkey length ending byte is <<1>>, so WIF signals to use
+  # compressed public keys
+  defp process_binary_privkey(privkey) when bit_size(privkey) == (256 + 8) do
+    String.trim_trailing(privkey, <<1>>) # Remove trailing <<1>>
+    |>process_binary_privkey() # Process as uncompressed WIF
+    |>case do # Update `:compressed` metadata
+        {:ok, result} -> {:ok, Map.put(result, :compressed, true)}
+        {:error, error} -> {:error, error}
+      end
+  end
+  # The private key has a length != 256. That's weird.
+  defp process_binary_privkey(_privkey) do
+    {:error, :unexpected_length}
+  end
+
 end
