@@ -13,7 +13,9 @@ defmodule BtcTool do
   @ecc_max "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364140" |> Base.decode16!()
 
   @typedoc """
-  Wallet Import Format string to be imported in base58check.
+  Wallet Import Format string ready to be imported into a wallet. It
+  uses base58check characters. The raw private key can be extracted from
+  this.
 
   Examples:
     - Uncompressed private key to be imported (51 characters in base58,
@@ -25,73 +27,80 @@ defmodule BtcTool do
   """
   @type wif_type :: <<_::408>> | <<_::416>>
   @typedoc """
-  Wallet Import Format including the base58check containing the private
-  key.
+  Hash which includes WIF, private key and metadata.
+
+  #### WIF string
+  Wallet Import Format string containing the private key. It also
+  includes metadata with information extracted from the WIF string.
 
   WIF will be a base58check string of 51 characters (408 bits) if user
   want to use uncompressed public keys in the bitcoin addresses, or 52
   characters (416 bits) if wants to use compressed public keys.
 
-  Metadata like `network` or `compressed` can also be deducted from the
-  WIP string, but make them visible anyway here:
-   - `network`. Which network (`:mainnet`, or `:testnet`) is intended to
-   be used on.
-   - `compressed`. States if a compressed public key will be used when
-   generating addresses.
-  """
-  @type wif_result :: %{wif: wif_type, network: :testnet | :mainnet, compressed: boolean }
-  @typedoc """
-  Returns the raw private key in binary format (512bits) and hexadecimal
-  format (characters a-z0-9)
+  #### Raw private key
+  Raw private key in binary format (512bits) and hexadecimal
+  format (characters a-z0-9). 
 
-  Also returns extracted available metadata like `network` or
-  `compressed` deducted from the WIP string:
-   - `network`. Which network (`:mainnet`, or `:testnet`)is intended to
-   be used on.
-   - `compressed`. States if a compressed public key will be used when
-   generating addresses.
+  #### Available metadata
+  Metadata like `network` or `compressed` is deducted from the WIP
+  string:
+   - `network`. Which network (`:mainnet`, or `:testnet`) is intended to
+   be used the private key.
+   - `compressed`. States if when using private key to generate an
+   address  should use the compressed or uncompressed version of the
+   public key. NOTE: Nowadays is normal to use the compressed version.
   """
-  @type privkey_result :: %{privkey_bin: <<_::256>>, privkey_hex: <<_::512>>, network: :testnet | :mainnet, compressed: boolean }
+  @type privkey_result :: %{
+    wif: wif_type,
+    privkey_bin: <<_::256>>, privkey_hex: <<_::512>>,
+    network: :testnet | :mainnet, compressed: boolean }
 
   @doc """
   Create Wallet Import Format (WIF) private key from raw private key.
   A raw private key can be presented by a binary of 32 bytes or in
   64 hexadecimal characters (0-9a-fA-F)
 
-  It assumes you want the compressed WIF version by default. That way
-  you are signalling that the bitcoin address which should be used when
-  imported into a wallet will be also compressed.
+  It assumes you want the **compressed** WIF version by default. That
+  way you are signalling that the bitcoin address which should be used
+  when imported into a wallet will be also compressed.
 
   ## Options
     - `compressed` - Generate a WIF which signals that a compressed
-      public key should be used if `true`. Deafault is `true`.
-    - `network` - Specifies the network is this private key intended to
+      public key should be used if `true`. Default to `true`.
+    - `network` - Specifies the network this private key intended to
       be used on. Can be `:mainnet` or `:testnet`. Default is `:mainnet`.
-    - `case` - Specifies the character case to accept when decoding.
+    - `case` - Ensures the character case to accept when decoding.
       Valid values are: `:upper`, `:lower`, `:mixed`.
       Only useful when the raw private key is passed in hex format.
+      If case is not satisfied will return an ArgumentError.
       Default is `:mixed`
 
   ## Examples
 
       iex> hexprivkey = "0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF"
-      iex> binprivkey = hexprivkey |> Base.decode16!()
       <<1, 35, 69, 103, 137, 171, 205, 239, 1, 35, 69, 103, 137, 171, 205, 239, 1, 35, 69, 103, 137, 171, 205, 239, 1, 35, 69, 103, 137, 171, 205, 239>>
       iex> privkey_to_wif(hexprivkey)
       {:ok, %{
         wif: "KwFvTne98E1t3mTNAr8pKx67eUzFJWdSNPqPSfxMEtrueW7PcQzL",
+        privkey_bin: <<1, 35, 69, 103, 137, 171, 205, 239, 1, 35, 69, 103, 137, 171, 205, 239, 1, 35, 69, 103, 137, 171, 205, 239, 1, 35, 69, 103, 137, 171, 205, 239>>,
+        privkey_hex: "0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF",
         compressed: true,
         network: :mainnet
       }}
+      iex> binprivkey = hexprivkey |> Base.decode16!()
       iex> privkey_to_wif(binprivkey)
       {:ok, %{
         wif: "KwFvTne98E1t3mTNAr8pKx67eUzFJWdSNPqPSfxMEtrueW7PcQzL",
+        privkey_bin: <<1, 35, 69, 103, 137, 171, 205, 239, 1, 35, 69, 103, 137, 171, 205, 239, 1, 35, 69, 103, 137, 171, 205, 239, 1, 35, 69, 103, 137, 171, 205, 239>>,
+        privkey_hex: "0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF",
         compressed: true,
         network: :mainnet
       }}
       iex> privkey_to_wif(binprivkey, compressed: false, network: :testnet)
       {:ok, %{
         wif: "91bRE5Duv5h8kYhhTLhYRXijCiXWSpWwFNX6nndfuntBdPV2idD",
+        privkey_bin: <<1, 35, 69, 103, 137, 171, 205, 239, 1, 35, 69, 103, 137, 171, 205, 239, 1, 35, 69, 103, 137, 171, 205, 239, 1, 35, 69, 103, 137, 171, 205, 239>>,
+        privkey_hex: "0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF",
         compressed: false,
         network: :testnet
       }}
@@ -110,7 +119,7 @@ defmodule BtcTool do
   """
   @default_options [network: :mainnet, compressed: true]
   @spec privkey_to_wif( <<_::512>> | <<_::256>>, [{atom, any}] ) ::
-    {:ok, wif_result}
+    {:ok, privkey_result}
     | {:error, atom }
   def privkey_to_wif(privkey, options \\ [])
   def privkey_to_wif(hexprivkey, options) when is_binary(hexprivkey) and bit_size(hexprivkey) === 512 do
@@ -148,6 +157,7 @@ defmodule BtcTool do
 
       iex> wif_to_privkey("KwFvTne98E1t3mTNAr8pKx67eUzFJWdSNPqPSfxMEtrueW7PcQzL")
       {:ok, %{
+        wif: "KwFvTne98E1t3mTNAr8pKx67eUzFJWdSNPqPSfxMEtrueW7PcQzL",
         privkey_bin: <<1, 35, 69, 103, 137, 171, 205, 239, 1, 35, 69, 103, 137, 171, 205, 239, 1, 35, 69, 103, 137, 171, 205, 239, 1, 35, 69, 103, 137, 171, 205, 239>>,
         privkey_hex: "0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF",
         compressed: true,

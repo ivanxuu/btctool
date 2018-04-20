@@ -7,6 +7,7 @@ defmodule BtcToolTest.PrivKey do
     test "read compressed WIF in mainnet" do
       assert PrivKey.from_wif("KwFvTne98E1t3mTNAr8pKx67eUzFJWdSNPqPSfxMEtrueW7PcQzL") ==
         {:ok, %{
+          wif: "KwFvTne98E1t3mTNAr8pKx67eUzFJWdSNPqPSfxMEtrueW7PcQzL", 
           privkey_bin: <<1, 35, 69, 103, 137, 171, 205, 239, 1, 35, 69, 103, 137, 171, 205, 239, 1, 35, 69, 103, 137, 171, 205, 239, 1, 35, 69, 103, 137, 171, 205, 239>>,
           privkey_hex: "0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF",
           compressed: true,
@@ -15,6 +16,7 @@ defmodule BtcToolTest.PrivKey do
     test "read uncompressed WIF in mainnet" do
       assert PrivKey.from_wif("5HpneLQNKrcznVCQpzodYwAmZ4AoHeyjuRf9iAHAa498rP5kuWb") ==
         {:ok, %{
+          wif: "5HpneLQNKrcznVCQpzodYwAmZ4AoHeyjuRf9iAHAa498rP5kuWb", 
           privkey_bin: <<1, 35, 69, 103, 137, 171, 205, 239, 1, 35, 69, 103, 137, 171, 205, 239, 1, 35, 69, 103, 137, 171, 205, 239, 1, 35, 69, 103, 137, 171, 205, 239>>,
           privkey_hex: "0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF",
           compressed: false,
@@ -23,6 +25,7 @@ defmodule BtcToolTest.PrivKey do
     test "read compressed WIF in testnet" do
       assert PrivKey.from_wif("cMcuvhdzZHi9DCvdZFwwhGbBGiHexxj8SRyrZ6Qrk1WuuFC5NyCf") ==
         {:ok, %{
+          wif: "cMcuvhdzZHi9DCvdZFwwhGbBGiHexxj8SRyrZ6Qrk1WuuFC5NyCf", 
           privkey_bin: <<1, 35, 69, 103, 137, 171, 205, 239, 1, 35, 69, 103, 137, 171, 205, 239, 1, 35, 69, 103, 137, 171, 205, 239, 1, 35, 69, 103, 137, 171, 205, 239>>,
           privkey_hex: "0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF",
           compressed: true,
@@ -31,6 +34,7 @@ defmodule BtcToolTest.PrivKey do
     test "read uncompressed WIF in testnet" do
       assert PrivKey.from_wif("91bRE5Duv5h8kYhhTLhYRXijCiXWSpWwFNX6nndfuntBdPV2idD") ==
         {:ok, %{
+          wif: "91bRE5Duv5h8kYhhTLhYRXijCiXWSpWwFNX6nndfuntBdPV2idD", 
           privkey_bin: <<1, 35, 69, 103, 137, 171, 205, 239, 1, 35, 69, 103, 137, 171, 205, 239, 1, 35, 69, 103, 137, 171, 205, 239, 1, 35, 69, 103, 137, 171, 205, 239>>,
           privkey_hex: "0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF",
           compressed: false,

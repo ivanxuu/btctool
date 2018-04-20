@@ -21,38 +21,48 @@ defmodule BtcTool.PrivKey do
       iex> to_wif(binprivkey, :mainnet, true)
       %{
         wif: "KwFvTne98E1t3mTNAr8pKx67eUzFJWdSNPqPSfxMEtrueW7PcQzL",
+        privkey_bin: <<1, 35, 69, 103, 137, 171, 205, 239, 1, 35, 69, 103, 137, 171, 205, 239, 1, 35, 69, 103, 137, 171, 205, 239, 1, 35, 69, 103, 137, 171, 205, 239>>,
+        privkey_hex: "0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF",
         compressed: true,
         network: :mainnet
       }
       iex> to_wif(binprivkey, :mainnet, false)
       %{
         wif: "5HpneLQNKrcznVCQpzodYwAmZ4AoHeyjuRf9iAHAa498rP5kuWb",
+        privkey_bin: <<1, 35, 69, 103, 137, 171, 205, 239, 1, 35, 69, 103, 137, 171, 205, 239, 1, 35, 69, 103, 137, 171, 205, 239, 1, 35, 69, 103, 137, 171, 205, 239>>,
+        privkey_hex: "0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF",
         compressed: false,
         network: :mainnet
       }
       iex> to_wif(binprivkey, :testnet, true)
       %{
         wif: "cMcuvhdzZHi9DCvdZFwwhGbBGiHexxj8SRyrZ6Qrk1WuuFC5NyCf",
+        privkey_bin: <<1, 35, 69, 103, 137, 171, 205, 239, 1, 35, 69, 103, 137, 171, 205, 239, 1, 35, 69, 103, 137, 171, 205, 239, 1, 35, 69, 103, 137, 171, 205, 239>>,
+        privkey_hex: "0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF",
         compressed: true,
         network: :testnet
       }
       iex> to_wif(binprivkey, :testnet, false)
       %{
         wif: "91bRE5Duv5h8kYhhTLhYRXijCiXWSpWwFNX6nndfuntBdPV2idD",
+        privkey_bin: <<1, 35, 69, 103, 137, 171, 205, 239, 1, 35, 69, 103, 137, 171, 205, 239, 1, 35, 69, 103, 137, 171, 205, 239, 1, 35, 69, 103, 137, 171, 205, 239>>,
+        privkey_hex: "0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF",
         compressed: false,
         network: :testnet
       }
   """
   @spec to_wif(<<_::256>> | <<_::264>>, :testnet | :mainnet, boolean) ::
-    BtcTool.wif_result
+    BtcTool.privkey_result
   def to_wif(binprivkey, network, compress)
   def to_wif(binprivkey, :testnet, false) do
     %{encoded: encoded} = Area58check.encode(binprivkey, :testnet_wif)
-    %{wif: encoded, network: :testnet, compressed: false }
+    %{wif: encoded, network: :testnet, compressed: false}
+    |>merge_privkey(binprivkey)
   end
   def to_wif(binprivkey, :mainnet, false) do
     %{encoded: encoded} = Area58check.encode(binprivkey, :wif)
     %{wif: encoded, network: :mainnet, compressed: false}
+    |>merge_privkey(binprivkey)
   end
   def to_wif(binprivkey, network, true) when bit_size(binprivkey) === 256 do
     # To signal the compressed WIF, a 0x01 is appended to the end of
@@ -60,7 +70,15 @@ defmodule BtcTool.PrivKey do
     # https://bitcoin.stackexchange.com/questions/3059#answer-3839
     binprivkey <> <<1>>
     |>to_wif(network, false)
-    |>Map.merge(%{compressed: true}) # Override compression to true
+    |>Map.merge(%{ compressed: true }) # Override compression to true
+    |>merge_privkey(binprivkey)
+  end
+  # Merge the raw private key into result (binary and hexadecimal)
+  defp merge_privkey(result, binprivkey) do
+    Map.merge(result, %{
+      privkey_bin: binprivkey,
+      privkey_hex: Base.encode16(binprivkey)
+    })
   end
 
   @doc """
@@ -71,6 +89,10 @@ defmodule BtcTool.PrivKey do
   def from_wif(wif) do
     Area58check.decode(wif)
     |>process_base58check_result()
+    |>case do
+        {:ok, result} -> {:ok, Map.put(result, :wif, wif)}
+        {:error, error} -> {:error, error}
+      end
   end
   defp process_base58check_result({:ok, %{decoded: decoded, version: version}}) when version in [:wif, :testnet_wif] do
     network = wif_version_to_network(version) #=> :testnet or :mainnet
@@ -80,7 +102,7 @@ defmodule BtcTool.PrivKey do
         {:error, error} -> {:error, error}
       end
   end
-  # Version is another from :wif, or :wif_testnet
+  # Version is other from :wif, or :wif_testnet
   defp process_base58check_result({:ok, %{decoded: _decoded, version: _version}}) do
     {:error, :not_wif_version_prefix}
   end
