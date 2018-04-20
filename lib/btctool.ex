@@ -72,13 +72,12 @@ defmodule BtcTool do
     - `case` - Ensures the character case to accept when decoding.
       Valid values are: `:upper`, `:lower`, `:mixed`.
       Only useful when the raw private key is passed in hex format.
-      If case is not satisfied will return an ArgumentError.
+      If case is not satisfied will return an error.
       Default is `:mixed`
 
   ## Examples
 
       iex> hexprivkey = "0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF"
-      <<1, 35, 69, 103, 137, 171, 205, 239, 1, 35, 69, 103, 137, 171, 205, 239, 1, 35, 69, 103, 137, 171, 205, 239, 1, 35, 69, 103, 137, 171, 205, 239>>
       iex> privkey_to_wif(hexprivkey)
       {:ok, %{
         wif: "KwFvTne98E1t3mTNAr8pKx67eUzFJWdSNPqPSfxMEtrueW7PcQzL",
@@ -88,6 +87,7 @@ defmodule BtcTool do
         network: :mainnet
       }}
       iex> binprivkey = hexprivkey |> Base.decode16!()
+      <<1, 35, 69, 103, 137, 171, 205, 239, 1, 35, 69, 103, 137, 171, 205, 239, 1, 35, 69, 103, 137, 171, 205, 239, 1, 35, 69, 103, 137, 171, 205, 239>>
       iex> privkey_to_wif(binprivkey)
       {:ok, %{
         wif: "KwFvTne98E1t3mTNAr8pKx67eUzFJWdSNPqPSfxMEtrueW7PcQzL",
@@ -116,22 +116,31 @@ defmodule BtcTool do
       iex> maxprivkey = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364140" |> Base.decode16!()
       iex> privkey_to_wif(maxprivkey)
       {:error, :ecc_out_range}
+
+  When private key is hexadecimal and have an unexpected case:
+
+      iex> privkey_to_wif("0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF", case: :lower)
+      {:error, :unexpected_hexadecimal_case}
   """
   @default_options [network: :mainnet, compressed: true]
   @spec privkey_to_wif( <<_::512>> | <<_::256>>, [{atom, any}] ) ::
     {:ok, privkey_result}
     | {:error, atom }
   def privkey_to_wif(privkey, options \\ [])
+  # Private key was provided in hexadecimal format
   def privkey_to_wif(hexprivkey, options) when is_binary(hexprivkey) and bit_size(hexprivkey) === 512 do
     options = Keyword.merge( [case: :mixed], options)
     hexprivkey
-    |>Base.decode16!(case: options[:case])
-    |>privkey_to_wif(options)
+    |>Base.decode16(case: options[:case])
+    |>case do
+        {:ok, binprivkey} -> privkey_to_wif(binprivkey, options)
+        :error -> {:error, :unexpected_hexadecimal_case}
+      end
   end
   # Private key must be inside a recommended range. Otherwise return
   # error. More info at:
   # https://bitcoin.stackexchange.com/questions/1389#answer-1715
-  def privkey_to_wif(hexprivkey, _options) when hexprivkey <= @ecc_min or hexprivkey >= @ecc_max do
+  def privkey_to_wif(binprivkey, _options) when binprivkey <= @ecc_min or binprivkey >= @ecc_max do
     {:error, :ecc_out_range}
   end
   def privkey_to_wif(binprivkey, options) when is_binary(binprivkey) and bit_size(binprivkey) === 256 do
