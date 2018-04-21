@@ -39,7 +39,7 @@ defmodule BtcTool do
 
   #### Raw private key
   Raw private key in binary format (512bits) and hexadecimal
-  format (characters a-z0-9).
+  format (characters `a-z0-9`).
 
   #### Available metadata
   Metadata like `network` or `compressed` is deducted from the WIP
@@ -56,23 +56,23 @@ defmodule BtcTool do
     network: :testnet | :mainnet, compressed: boolean }
 
   @typedoc """
-  Public key derived from the private key.
+  Public key derived from the private key in binary format.
 
   This key can be compressed or uncompressed. Compressed keys include
-  only the x coordinate. Uncompressed public key includes the `x` and
+  only the `x` coordinate. Uncompressed public key includes the `x` and
   `y` coordinates. To differentiate between them, an additional byte is
   added to the beginning:
 
-    - Uncompressed key starts with `0x04`
-    - Compressed key begins with `0x02` or `0x03` depending on if the
-    `y` coordinate is odd or even.
+    - Uncompressed public key starts with `0x04`
+    - Compressed public key begins with `0x02` or `0x03` depending on if
+    the `y` coordinate is ever or odd respectively.
   """
   @type pubkey_type :: <<_::264>> | <<_::520>>
 
   @doc """
   Create Wallet Import Format (WIF) private key from raw private key.
   A raw private key can be presented by a binary of 32 bytes or in
-  64 hexadecimal characters (0-9a-fA-F)
+  64 hexadecimal characters (`0-9a-fA-F`)
 
   It assumes you want the **compressed** WIF version by default. That
   way you are signalling that the bitcoin address which should be used
