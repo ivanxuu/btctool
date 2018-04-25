@@ -217,7 +217,8 @@ defmodule BtcTool do
   uncompressed format. The compressed format is usually the most used.
   Which one should be used, can be deducted from the WIF string, so this
   function finds out which one is requested without any user
-  intervention.
+  intervention. Returned result will include if public key was
+  compressed or uncompressed.
 
   Note: If you want to generate a public key directly from the binary
   private key, instead of a WIF string, you can use the function
@@ -230,7 +231,8 @@ defmodule BtcTool do
       iex> wif_to_pubkey("KwFvTne98E1t3mTNAr8pKx67eUzFJWdSNPqPSfxMEtrueW7PcQzL")
       {:ok, %{
         pubkey_bin: <<3, 70, 70, 174, 80, 71, 49, 107, 66, 48, 208, 8, 108, 138, 206, 198, 135, 240, 11, 28, 217, 209, 220, 99, 79, 108, 179, 88, 172, 10, 154, 143, 255>>,
-        pubkey_hex: "034646AE5047316B4230D0086C8ACEC687F00B1CD9D1DC634F6CB358AC0A9A8FFF"}
+        pubkey_hex: "034646AE5047316B4230D0086C8ACEC687F00B1CD9D1DC634F6CB358AC0A9A8FFF",
+        compressed: true}
       }
 
   With a uncompressed WIF string (starts with `5`):
@@ -238,7 +240,8 @@ defmodule BtcTool do
       iex> wif_to_pubkey("5HpneLQNKrcznVCQpzodYwAmZ4AoHeyjuRf9iAHAa498rP5kuWb")
       {:ok, %{
         pubkey_bin: <<4, 70, 70, 174, 80, 71, 49, 107, 66, 48, 208, 8, 108, 138, 206, 198, 135, 240, 11, 28, 217, 209, 220, 99, 79, 108, 179, 88, 172, 10, 154, 143, 255, 254, 119, 180, 221, 10, 75, 251, 149, 133, 31, 59, 115, 85, 199, 129, 221, 96, 248, 65, 143, 200, 166, 93, 20, 144, 122, 255, 71, 201, 3, 165, 89>>,
-        pubkey_hex: "044646AE5047316B4230D0086C8ACEC687F00B1CD9D1DC634F6CB358AC0A9A8FFFFE77B4DD0A4BFB95851F3B7355C781DD60F8418FC8A65D14907AFF47C903A559"}
+        pubkey_hex: "044646AE5047316B4230D0086C8ACEC687F00B1CD9D1DC634F6CB358AC0A9A8FFFFE77B4DD0A4BFB95851F3B7355C781DD60F8418FC8A65D14907AFF47C903A559",
+        compressed: false}
       }
 
   Will return an error and atom if any error is present. Some examples
@@ -251,7 +254,8 @@ defmodule BtcTool do
   """
   @spec wif_to_pubkey(wif_type) :: {:ok, %{
       pubkey_bin: BtcTool.pubkey_type,
-      pubkey_hex: <<_::528>> | <<_::1040>> # E.g.: 33hexchars * 16bits = 528
+      pubkey_hex: <<_::528>> | <<_::1040>>, # E.g.: 33hexchars * 16bits = 528
+      compressed: boolean
     }} | {:error, atom}
   def wif_to_pubkey(wif) do
     wif

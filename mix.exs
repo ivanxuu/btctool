@@ -6,7 +6,7 @@ defmodule BtcTool.Mixfile do
   def project do
     [
       app: :btctool,
-      version: "0.4.0", # Major: Incompatible API changes
+      version: "0.5.0", # Major: Incompatible API changes
                         # Minor: Backward-compatible added functionality
                         # Patch: Backward-compatible bug fixes
       elixir: "~> 1.5",
