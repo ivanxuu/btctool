@@ -5,7 +5,7 @@ defmodule BtcTool do
   brainwallets, WIFs, etc.
   """
 
-  alias BtcTool.{PrivKey,PubKey}
+  alias BtcTool.{PrivKey,PubKey,Crypto}
 
   # Min-max value for secp256k1 ECC. More info at:
   # https://bitcoin.stackexchange.com/questions/1389#answer-1715
@@ -265,6 +265,43 @@ defmodule BtcTool do
           PubKey.binprivkey_to_binpubkey(binprivkey, compressed)
         {:error, reason} -> {:error, reason}
       end
+  end
+
+  @doc """
+  Returns Wallet Import Format (WIF) generated from any arbitrary text
+  (passphrase).
+
+  > **Disclaimer**
+  >
+  > Using any low entropy text like any text from a book,
+  > poem, song or sentence will result in you losing your coins. In other
+  > words, if you don't know what your doing: **Don't use brainwallets**.
+  > More info at [DEF CON 23 - Ryan Castellucci - Cracking CryptoCurrency
+  > Brainwallets](https://www.youtube.com/watch?v=foil0hzl4Pg)
+
+  #### Options
+  It accepts the same options that the function `privkey_to_wif/2`:
+
+    - `compressed` - Generate a WIF which signals that a compressed
+      public key should be used if `true`. Default to `true`.
+    - `network` - Specifies the network this private key intended to
+      be used on. Can be `:mainnet` or `:testnet`. Default is `:mainnet`.
+
+  #### Examples
+
+      iex> brainwallet_to_wif("correct horse battery staple")
+      {:ok, %{
+        compressed: true, network: :mainnet,
+        privkey_bin: <<196, 187, 203, 31, 190, 201, 157, 101, 191, 89, 216, 92, 140, 182, 46, 226, 219, 150, 63, 15, 225, 6, 244, 131, 217, 175, 167, 59, 212, 227, 154, 138>>,
+        privkey_hex: "C4BBCB1FBEC99D65BF59D85C8CB62EE2DB963F0FE106F483D9AFA73BD4E39A8A",
+        wif: "L3p8oAcQTtuokSCRHQ7i4MhjWc9zornvpJLfmg62sYpLRJF9woSu"}}
+  """
+  @spec brainwallet_to_wif(binary, [{atom, any}]) :: 
+    {:ok, privkey_result} | {:error, atom }
+  def brainwallet_to_wif(passphrase, options \\ []) when is_binary(passphrase) do
+    passphrase
+    |>Crypto.sha256() # Return 256 bits hash of passphrase
+    |>privkey_to_wif(options) # Consider hash as the private key and gen WIF
   end
 
 end

@@ -2,6 +2,8 @@ defmodule BtcTool.PubKey do
   @moduledoc false
   # Functions to convert between public key to other formats.
 
+  alias BtcTool.Crypto
+
   @doc """
   Convert a binary private key (256 bits) to its public key.
 
@@ -38,14 +40,14 @@ defmodule BtcTool.PubKey do
     # When using compressed keys it will only output the coordinate x
     # plus an extra byte at the beginning. That extra byte can be 0x03
     # or 0x02 depending on the value of `y mod 2`.
-    {x, <<y::256>>} = ecc_pubkey(binprivkey)
+    {x, <<y::256>>} = Crypto.ecc_pubkey_coordinates(binprivkey)
     case Integer.mod(y, 2) do
       0 -> {:ok, present_pubkey(<<0x02>> <> x, %{compressed: true})}
       1 -> {:ok, present_pubkey(<<0x03>> <> x, %{compressed: true})}
     end
   end
   def binprivkey_to_binpubkey(binprivkey, false) when bit_size(binprivkey) == 256  do
-    {x, y} = ecc_pubkey(binprivkey)
+    {x, y} = Crypto.ecc_pubkey_coordinates(binprivkey)
     # When using uncompressed keys coordinates are prefixed with 0x04
     {:ok, present_pubkey(<<0x04>> <> x <> y, %{compressed: false})}
   end
@@ -55,19 +57,10 @@ defmodule BtcTool.PubKey do
     {:error, :unexpected_binary_privkey_length}
   end
   # Present result. Merge metadata map with extra information
-  defp present_pubkey(binpubkey, %{} = metadata \\ %{}) do
+  defp present_pubkey(binpubkey, metadata) do
     # Return binary and hexadecimal format
     %{pubkey_bin: binpubkey,
       pubkey_hex: Base.encode16(binpubkey) }
     |>Map.merge(metadata)
-  end
-  # Return public key from ECC
-  defp ecc_pubkey(binprivkey) do
-    {uncompressed_ecc_pubkey, _priv_key} =
-      :crypto.generate_key(:ecdh, :crypto.ec_curve(:secp256k1), binprivkey)
-    # Ignore first byte which always is 0x04 for uncompressed pub key
-    x = binary_part(uncompressed_ecc_pubkey, 1, 32)
-    y = binary_part(uncompressed_ecc_pubkey, 33, 32)
-    {x, y}
   end
 end

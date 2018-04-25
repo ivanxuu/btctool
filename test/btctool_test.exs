@@ -15,4 +15,13 @@ defmodule BtcToolTest do
     end
   end
 
+  describe "brainwallet_to_wif" do
+    test "accept options" do
+      {:ok, %{wif: "935ZTXVqEatu6BaEX6CHrzpXquDKurpVXD7q1FQ1K3pt8VwmG2L"}}
+        = BtcTool.brainwallet_to_wif(
+            "correct horse battery staple",
+            network: :testnet, compressed: false)
+    end
+  end
+
 end
