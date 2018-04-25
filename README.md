@@ -15,6 +15,9 @@ brainwallets, WIFs, etc.
   [BtcTool.wif_to_pubkey(wif)](https://hexdocs.pm/btctool/BtcTool.html#wif_to_pubkey/1)
   Returns the public key from a Wallet Import Format (WIF) string.
 
+  [BtcTool.brainwallet_to_wif(wif, options)](https://hexdocs.pm/btctool/BtcTool.html#brainwallet_to_wif/2)
+  Returns Wallet Import Format (WIF) generated from any arbitrary text (passphrase).
+
 ## Installation
 
 The package can be installed by adding `btctool` to your list of
