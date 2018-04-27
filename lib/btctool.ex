@@ -5,7 +5,7 @@ defmodule BtcTool do
   brainwallets, WIFs, etc.
   """
 
-  alias BtcTool.{PrivKey,PubKey,Crypto}
+  alias BtcTool.{PrivKey,PubKey,Crypto,Address}
 
   # Min-max value for secp256k1 ECC. More info at:
   # https://bitcoin.stackexchange.com/questions/1389#answer-1715
@@ -68,6 +68,12 @@ defmodule BtcTool do
     the `y` coordinate is ever or odd respectively.
   """
   @type pubkey_type :: <<_::264>> | <<_::520>>
+
+
+  @typedoc """
+  All valid types of bitcoin addresses.
+  """
+  @type address_type :: :p2pkh
 
   @doc """
   Create Wallet Import Format (WIF) private key from raw private key.
@@ -296,7 +302,7 @@ defmodule BtcTool do
         privkey_hex: "C4BBCB1FBEC99D65BF59D85C8CB62EE2DB963F0FE106F483D9AFA73BD4E39A8A",
         wif: "L3p8oAcQTtuokSCRHQ7i4MhjWc9zornvpJLfmg62sYpLRJF9woSu"}}
   """
-  @spec brainwallet_to_wif(binary, [{atom, any}]) :: 
+  @spec brainwallet_to_wif(binary, [{atom, any}]) ::
     {:ok, privkey_result} | {:error, atom }
   def brainwallet_to_wif(passphrase, options \\ []) when is_binary(passphrase) do
     passphrase
@@ -304,4 +310,47 @@ defmodule BtcTool do
     |>privkey_to_wif(options) # Consider hash as the private key and gen WIF
   end
 
+  @doc """
+  Generate the address corresponding to the Wallet Import Format (WIP)
+  string where to receive funds.
+
+  The result will include the address, the type of the address and if
+  public key used was compressed or not.
+
+  #### Options
+
+  Available options are:
+    - `type`: Which tells the type of address. Currently the only valid
+    value is only `:p2pkh`. Default value will be the most modern
+    available, so **be sure to specify a type if you don't want your
+    address to suddenly change.**
+
+  #### Examples
+      iex> wif_to_address("L3p8oAcQTtuokSCRHQ7i4MhjWc9zornvpJLfmg62sYpLRJF9woSu")
+      {:ok, %{
+        address: "1C7zdTfnkzmr13HfA2vNm5SJYRK6nEKyq8",
+        compressed: true,
+        type: :p2pkh}}
+      iex> wif_to_address("5KJvsngHeMpm884wtkJNzQGaCErckhHJBGFsvd3VyK5qMZXj3hS", type: :p2pkh)
+      {:ok, %{
+        address: "1JwSSubhmg6iPtRjtyqhUYYH7bZg3Lfy1T",
+        compressed: false,
+        type: :p2pkh}}
+      iex> wif_to_address("5KJvsngHeMpm884wtkJNzQGaCErckhHJBGFsvd3VyK5qMZXj3hS", type: :wofff)
+      {:error, :unknown_address_type}
+  """
+  @spec wif_to_address(wif_type, [{atom, any}]) ::
+    {:ok, %{address: binary, type: address_type}} | {:error, atom}
+  @default_options [type: :p2pkh]
+  def wif_to_address(wif, options \\ []) do
+    options = Keyword.merge(@default_options, options)
+    with \
+      {:ok, %{pubkey_bin: binpubkey, compressed: compresed}} <- wif_to_pubkey(wif),
+      {:ok, result} <- Address.from_pubkey(binpubkey, options[:type])
+    do
+      {:ok, Map.put(result, :compressed, compresed)}
+    else
+      {:error, error} -> {:error, error}
+    end
+  end
 end
