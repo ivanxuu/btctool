@@ -84,54 +84,55 @@ defmodule BtcTool.PrivKey do
   @doc """
   Convert from Wallet Import Format private key to its raw version
   (binary and hexadecimal format).
+
+  #### Example
+
+      iex> from_wif("KwFvTne98E1t3mTNAr8pKx67eUzFJWdSNPqPSfxMEtrueW7PcQzL")
+      {:ok, %{
+        wif: "KwFvTne98E1t3mTNAr8pKx67eUzFJWdSNPqPSfxMEtrueW7PcQzL",
+        privkey_bin: <<1, 35, 69, 103, 137, 171, 205, 239, 1, 35, 69, 103, 137, 171, 205, 239, 1, 35, 69, 103, 137, 171, 205, 239, 1, 35, 69, 103, 137, 171, 205, 239>>,
+        privkey_hex: "0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF",
+        compressed: true,
+        network: :mainnet
+      }}
   """
   @spec from_wif(BtcTool.wif_type) :: {:ok, BtcTool.privkey_result} | {:error, atom}
   def from_wif(wif) do
-    Area58check.decode(wif)
-    |>process_base58check_result()
-    |>case do
-        {:ok, result} -> {:ok, Map.put(result, :wif, wif)}
-        {:error, error} -> {:error, error}
-      end
+    with \
+      {:ok, %{decoded: binprivkey, version: version}} <- Area58check.decode(wif),
+      # version must be wif, otherwise return error
+      true <- (version in [:wif, :testnet_wif]) or {:error, :not_wif_version_prefix},
+      # User expects to get the network field as `:testnet` or `:mainnet`
+      network <- %{wif: :mainnet, testnet_wif: :testnet}[version],
+      {:ok, privkey} <- add_metadata(binprivkey)
+    do
+      {:ok, %{privkey | network: network, wif: wif}}
+    end
   end
-  defp process_base58check_result({:ok, %{decoded: decoded, version: version}}) when version in [:wif, :testnet_wif] do
-    network = wif_version_to_network(version) #=> :testnet or :mainnet
-    process_binary_privkey(decoded)
-    |>case do
-        {:ok, result} -> {:ok, Map.put(result, :network, network)}
-        {:error, error} -> {:error, error}
-      end
-  end
-  # Version is other from :wif, or :wif_testnet
-  defp process_base58check_result({:ok, %{decoded: _decoded, version: _version}}) do
-    {:error, :not_wif_version_prefix}
-  end
-  defp process_base58check_result({:error, area58check_error}) do
-    {:error, area58check_error}
-  end
-  defp wif_version_to_network(:wif), do: :mainnet
-  defp wif_version_to_network(:testnet_wif), do: :testnet
+
   # binary privkey has the expected length of 256 bits. So that signals
   # to use public uncompressed keys
-  defp process_binary_privkey(binprivkey) when bit_size(binprivkey) == 256 do
+  defp add_metadata(binprivkey) when bit_size(binprivkey) == 256 do
     {:ok, %{
-      privkey_bin: binprivkey,
-      privkey_hex: Base.encode16(binprivkey),
-      compressed: false}
+        privkey_bin: binprivkey,
+        privkey_hex: Base.encode16(binprivkey),
+        compressed: false,
+        network: nil, # To be filed later
+        wif: nil # To be filed later
+      }
     }
   end
-  # binary privkey length ending byte is <<1>>, so WIF signals to use
-  # compressed public keys
-  defp process_binary_privkey(privkey) when bit_size(privkey) == (256 + 8) do
-    String.trim_trailing(privkey, <<1>>) # Remove trailing <<1>>
-    |>process_binary_privkey() # Process as uncompressed WIF
-    |>case do # Update `:compressed` metadata
-        {:ok, result} -> {:ok, Map.put(result, :compressed, true)}
-        {:error, error} -> {:error, error}
-      end
+  # Binary privkey ending byte is <<1>>, so WIF signals to use compressed
+  # public keys. Remove ending <<1>>, and process as uncompressed WIF
+  defp add_metadata(binprivkey) when bit_size(binprivkey) == (256 + 8) do
+    with \
+      trailed_privkey <- String.trim_trailing(binprivkey, <<1>>),
+      {:ok, privkey_metadata} <- add_metadata(trailed_privkey) do
+      {:ok, %{privkey_metadata | compressed: true}}
+    end
   end
-  # The private key has a length != 256. That's weird.
-  defp process_binary_privkey(_privkey) do
+  # The private key has a length != 256 or 264. That's weird, so return error.
+  defp add_metadata(_binprivkey) do
     {:error, :unexpected_length}
   end
 
