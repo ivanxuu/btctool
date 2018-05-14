@@ -1,7 +1,7 @@
 defmodule BtcTool.Mixfile do
   use Mix.Project
 
-  @github_url "https://github.com/ihinojal/btctool"
+  @github_url "https://github.com/ivanxuu/btctool"
 
   def project do
     [
